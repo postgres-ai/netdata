@@ -169,7 +169,9 @@ METRICS = {
         'replslot_files'
     ],
     QUERY_NAME_LONG_RUNNING_TX: [
-	'age_in_seconds'
+	  'client_tx_age_in_seconds',
+	  'autovacuum_tx_age_in_seconds',
+	  'other_tx_age_in_seconds'
     ],
     QUERY_NAME_PG_STAT_SLRU_COMMITTS: [
         'committs_blks_zeroed',
