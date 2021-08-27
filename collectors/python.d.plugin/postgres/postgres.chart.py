@@ -830,7 +830,7 @@ SELECT
 """,
 }
 
-QUERY_NAME_LONG_RUNNING_TX = {
+QUERY_LONG_RUNNING_TX = {
     DEFAULT: """
 SELECT
 	MAX(EXTRACT(EPOCH FROM (clock_timestamp() - xact_start)))
@@ -1053,7 +1053,7 @@ def query_factory(name, version=NO_VERSION):
             return QUERY_DIFF_LSN[V96]
         return QUERY_DIFF_LSN[DEFAULT]
     elif name == QUERY_NAME_LONG_RUNNING_TX:
-        return QUERY_NAME_LONG_RUNNING_TX[DEFAULT]
+        return QUERY_LONG_RUNNING_TX[DEFAULT]
     elif name == QUERY_NAME_PG_STAT_SLRU_COMMITTS:
         if version >= 130000:
             return QUERY_PG_STAT_SLRU_COMMITTS[DEFAULT]
