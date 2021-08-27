@@ -1116,6 +1116,7 @@ ORDER = [
     'forced_autovacuum',
     'tx_wraparound_oldest_current_xid',
     'tx_wraparound_percent_towards_wraparound',
+    'long_running_tx',
     'pg_stat_slru_committs',
     'pg_stat_slru_multixactmember',
     'pg_stat_slru_multixactoffset',
