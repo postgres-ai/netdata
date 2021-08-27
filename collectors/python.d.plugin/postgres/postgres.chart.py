@@ -60,7 +60,7 @@ QUERY_NAME_TX_WRAPAROUND = 'TX_WRAPAROUND'
 QUERY_NAME_DIFF_LSN = 'DIFF_LSN'
 QUERY_NAME_WAL_WRITES = 'WAL_WRITES'
 QUERY_NAME_LONG_RUNNING_TX = 'QUERY_NAME_LONG_RUNNING_TX'
-QUERY_NAME_PG_STAT_SLRU_COMMITS = 'PG_STAT_SLRU_COMMITS'
+QUERY_NAME_PG_STAT_SLRU_COMMITTS = 'PG_STAT_SLRU_COMMITTS'
 QUERY_NAME_PG_STAT_SLRU_MULTIXACTMEMBER = 'PG_STAT_SLRU_MULTIXACTMEMBER'
 QUERY_NAME_PG_STAT_SLRU_MULTIXACTOFFSET = 'PG_STAT_SLRU_MULTIXACTOFFSET'
 QUERY_NAME_PG_STAT_SLRU_NOTIFY = 'PG_STAT_SLRU_NOTIFY'
@@ -168,7 +168,7 @@ METRICS = {
         'replslot_wal_keep',
         'replslot_files'
     ],
-    QUERY_NAME_PG_STAT_SLRU_COMMITS: [
+    QUERY_NAME_PG_STAT_SLRU_COMMITTS: [
         'committs_blks_zeroed',
         'committs_blks_hit',
         'committs_blks_read',
@@ -1032,7 +1032,7 @@ def query_factory(name, version=NO_VERSION):
     elif name == QUERY_NAME_LONG_RUNNING_TX:
         if version > 130000:
             return QUERY_NAME_LONG_RUNNING_TX[DEFAULT]
-    elif name == QUERY_NAME_PG_STAT_SLRU_COMMITS:
+    elif name == QUERY_NAME_PG_STAT_SLRU_COMMITTS:
         if version > 130000:
             return QUERY_PG_STAT_SLRU_COMMITTS[DEFAULT]
     elif name == QUERY_NAME_PG_STAT_SLRU_MULTIXACTMEMBER:
@@ -1610,7 +1610,7 @@ class Service(SimpleService):
         self.queries[query_factory(QUERY_NAME_BLOCKERS, self.server_version)] = METRICS[QUERY_NAME_BLOCKERS]
         self.queries[query_factory(QUERY_NAME_LONG_RUNNING_TX, self.server_version)] = METRICS[QUERY_NAME_LONG_RUNNING_TX]
         if self.server_version >= 130000:
-            self.queries[query_factory(QUERY_NAME_PG_STAT_SLRU_COMMITS, self.server_version)] = METRICS[QUERY_NAME_PG_STAT_SLRU_COMMITS]
+            self.queries[query_factory(QUERY_NAME_PG_STAT_SLRU_COMMITTS, self.server_version)] = METRICS[QUERY_NAME_PG_STAT_SLRU_COMMITTS]
             self.queries[query_factory(QUERY_NAME_PG_STAT_SLRU_MULTIXACTMEMBER, self.server_version)] = METRICS[QUERY_NAME_PG_STAT_SLRU_MULTIXACTMEMBER]
             self.queries[query_factory(QUERY_NAME_PG_STAT_SLRU_MULTIXACTOFFSET, self.server_version)] = METRICS[QUERY_NAME_PG_STAT_SLRU_MULTIXACTOFFSET]
             self.queries[query_factory(QUERY_NAME_PG_STAT_SLRU_NOTIFY, self.server_version)] = METRICS[QUERY_NAME_PG_STAT_SLRU_NOTIFY]
