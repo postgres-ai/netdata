@@ -59,7 +59,8 @@ QUERY_NAME_FORCED_AUTOVACUUM = 'FORCED_AUTOVACUUM'
 QUERY_NAME_TX_WRAPAROUND = 'TX_WRAPAROUND'
 QUERY_NAME_DIFF_LSN = 'DIFF_LSN'
 QUERY_NAME_WAL_WRITES = 'WAL_WRITES'
-QUERY_NAME_PG_STAT_SLRU_COMMITTS = 'PG_STAT_SLRU_COMMITTS'
+QUERY_NAME_LONG_RUNNING_TX = 'QUERY_NAME_LONG_RUNNING_TX'
+QUERY_NAME_PG_STAT_SLRU_COMMITS = 'PG_STAT_SLRU_COMMITS'
 QUERY_NAME_PG_STAT_SLRU_MULTIXACTMEMBER = 'PG_STAT_SLRU_MULTIXACTMEMBER'
 QUERY_NAME_PG_STAT_SLRU_MULTIXACTOFFSET = 'PG_STAT_SLRU_MULTIXACTOFFSET'
 QUERY_NAME_PG_STAT_SLRU_NOTIFY = 'PG_STAT_SLRU_NOTIFY'
@@ -167,7 +168,7 @@ METRICS = {
         'replslot_wal_keep',
         'replslot_files'
     ],
-    QUERY_NAME_PG_STAT_SLRU_COMMITTS: [
+    QUERY_NAME_PG_STAT_SLRU_COMMITS: [
         'committs_blks_zeroed',
         'committs_blks_hit',
         'committs_blks_read',
@@ -1028,29 +1029,32 @@ def query_factory(name, version=NO_VERSION):
         if version < 100000:
             return QUERY_DIFF_LSN[V96]
         return QUERY_DIFF_LSN[DEFAULT]
-    elif name == QUERY_NAME_PG_STAT_SLRU_COMMITTS:
-        if version > 120000:
+    elif name == QUERY_NAME_LONG_RUNNING_TX:
+        if version > 130000:
+            return QUERY_NAME_LONG_RUNNING_TX[DEFAULT]
+    elif name == QUERY_NAME_PG_STAT_SLRU_COMMITS:
+        if version > 130000:
             return QUERY_PG_STAT_SLRU_COMMITTS[DEFAULT]
     elif name == QUERY_NAME_PG_STAT_SLRU_MULTIXACTMEMBER:
-        if version > 120000:
+        if version > 130000:
             return QUERY_PG_STAT_SLRU_MULTIXACTMEMBER[DEFAULT]
     elif name == QUERY_NAME_PG_STAT_SLRU_MULTIXACTOFFSET:
-        if version > 120000:
+        if version > 130000:
             return QUERY_PG_STAT_SLRU_MULTIXACTOFFSET[DEFAULT]
     elif name == QUERY_NAME_PG_STAT_SLRU_NOTIFY:
-        if version > 120000:
+        if version > 130000:
             return QUERY_PG_STAT_SLRU_NOTIFY[DEFAULT]
     elif name == QUERY_NAME_PG_STAT_SLRU_SERIAL:
-        if version > 120000:
+        if version > 130000:
             return QUERY_PG_STAT_SLRU_SERIAL[DEFAULT]
     elif name == QUERY_NAME_PG_STAT_SLRU_SUBTRANS:
-        if version > 120000:
+        if version > 130000:
             return QUERY_PG_STAT_SLRU_SUBTRANS[DEFAULT]
     elif name == QUERY_NAME_PG_STAT_SLRU_XACT:
-        if version > 120000:
+        if version > 130000:
             return QUERY_PG_STAT_SLRU_XACT[DEFAULT]
     elif name == QUERY_NAME_PG_STAT_SLRU_OTHER:
-        if version > 120000:
+        if version > 130000:
             return QUERY_PG_STAT_SLRU_OTHER[DEFAULT]
 
     raise ValueError('unknown query')
@@ -1606,7 +1610,7 @@ class Service(SimpleService):
         self.queries[query_factory(QUERY_NAME_BLOCKERS, self.server_version)] = METRICS[QUERY_NAME_BLOCKERS]
         self.queries[query_factory(QUERY_NAME_LONG_RUNNING_TX, self.server_version)] = METRICS[QUERY_NAME_LONG_RUNNING_TX]
         if self.server_version >= 130000:
-            self.queries[query_factory(QUERY_NAME_PG_STAT_SLRU_COMMITTS, self.server_version)] = METRICS[QUERY_NAME_PG_STAT_SLRU_COMMITTS]
+            self.queries[query_factory(QUERY_NAME_PG_STAT_SLRU_COMMITS, self.server_version)] = METRICS[QUERY_NAME_PG_STAT_SLRU_COMMITS]
             self.queries[query_factory(QUERY_NAME_PG_STAT_SLRU_MULTIXACTMEMBER, self.server_version)] = METRICS[QUERY_NAME_PG_STAT_SLRU_MULTIXACTMEMBER]
             self.queries[query_factory(QUERY_NAME_PG_STAT_SLRU_MULTIXACTOFFSET, self.server_version)] = METRICS[QUERY_NAME_PG_STAT_SLRU_MULTIXACTOFFSET]
             self.queries[query_factory(QUERY_NAME_PG_STAT_SLRU_NOTIFY, self.server_version)] = METRICS[QUERY_NAME_PG_STAT_SLRU_NOTIFY]
