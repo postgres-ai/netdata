@@ -168,6 +168,9 @@ METRICS = {
         'replslot_wal_keep',
         'replslot_files'
     ],
+    QUERY_NAME_LONG_RUNNING_TX: [
+	'age_in_seconds'
+    ],
     QUERY_NAME_PG_STAT_SLRU_COMMITTS: [
         'committs_blks_zeroed',
         'committs_blks_hit',
@@ -825,6 +828,24 @@ SELECT
 """,
 }
 
+QUERY_NAME_LONG_RUNNING_TX = {
+    DEFAULT: """
+SELECT
+	MAX(EXTRACT(EPOCH FROM (clock_timestamp() - xact_start)))
+	  FILTER (WHERE backend_type = 'client backend') as client_tx_age_in_seconds,
+	MAX(EXTRACT(EPOCH FROM (clock_timestamp() - xact_start)))
+	  FILTER (WHERE backend_type ~ 'autovacuum') as autovacuum_tx_age_in_seconds,
+	MAX(EXTRACT(EPOCH FROM (clock_timestamp() - xact_start)))
+	  FILTER (WHERE backend_type !~ 'autovacuum'
+	    AND backend_type <> 'client backend') as other_tx_age_in_seconds
+FROM
+	pg_stat_activity
+WHERE
+	state is distinct from 'idle'
+	AND backend_xmin IS NOT NULL;
+""",
+}
+
 QUERY_PG_STAT_SLRU_COMMITTS = {
     DEFAULT: """
 SELECT
@@ -1327,6 +1348,14 @@ CHARTS = {
         'lines': [
             ['replslot_wal_keep', 'wal keeped', 'absolute'],
             ['replslot_files', 'pg_replslot files', 'absolute']
+        ]
+    },
+    'pg_stat_ds': {
+        'options': [None, 'Max transaction age', 'seconds', 'db statistics', 'postgres.db_stat_tx_age', 'line'],
+        'lines': [
+            ['client_tx_age_in_seconds', 'client tx age (s)', 'absolute'],
+            ['autovacuum_tx_age_in_seconds', 'autovacuum tx age (s)', 'absolute'],
+            ['other_tx_age_in_seconds', 'other tx age (s)', 'absolute']
         ]
     },
     'pg_stat_slru_committs': {
