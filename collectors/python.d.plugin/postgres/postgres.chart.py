@@ -1353,7 +1353,7 @@ CHARTS = {
         ]
     },
     'long_running_tx': {
-        'options': [None, 'Max transaction age', 'seconds', 'db statistics', 'postgres.db_stat_tx_age', 'line'],
+        'options': [None, 'Max transaction age', 'seconds', 'oldest transactions', 'postgres.db_stat_tx_age', 'line'],
         'lines': [
             ['client_tx_age_in_seconds', 'client tx age (s)', 'absolute'],
             ['autovacuum_tx_age_in_seconds', 'autovacuum tx age (s)', 'absolute'],
