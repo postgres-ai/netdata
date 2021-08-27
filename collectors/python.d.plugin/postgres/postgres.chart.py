@@ -1053,31 +1053,31 @@ def query_factory(name, version=NO_VERSION):
             return QUERY_DIFF_LSN[V96]
         return QUERY_DIFF_LSN[DEFAULT]
     elif name == QUERY_NAME_LONG_RUNNING_TX:
-        if version > 130000:
+        if version >= 130000:
             return QUERY_NAME_LONG_RUNNING_TX[DEFAULT]
     elif name == QUERY_NAME_PG_STAT_SLRU_COMMITTS:
-        if version > 130000:
+        if version >= 130000:
             return QUERY_PG_STAT_SLRU_COMMITTS[DEFAULT]
     elif name == QUERY_NAME_PG_STAT_SLRU_MULTIXACTMEMBER:
-        if version > 130000:
+        if version >= 130000:
             return QUERY_PG_STAT_SLRU_MULTIXACTMEMBER[DEFAULT]
     elif name == QUERY_NAME_PG_STAT_SLRU_MULTIXACTOFFSET:
-        if version > 130000:
+        if version >= 130000:
             return QUERY_PG_STAT_SLRU_MULTIXACTOFFSET[DEFAULT]
     elif name == QUERY_NAME_PG_STAT_SLRU_NOTIFY:
-        if version > 130000:
+        if version >= 130000:
             return QUERY_PG_STAT_SLRU_NOTIFY[DEFAULT]
     elif name == QUERY_NAME_PG_STAT_SLRU_SERIAL:
-        if version > 130000:
+        if version >= 130000:
             return QUERY_PG_STAT_SLRU_SERIAL[DEFAULT]
     elif name == QUERY_NAME_PG_STAT_SLRU_SUBTRANS:
-        if version > 130000:
+        if version >= 130000:
             return QUERY_PG_STAT_SLRU_SUBTRANS[DEFAULT]
     elif name == QUERY_NAME_PG_STAT_SLRU_XACT:
-        if version > 130000:
+        if version >= 130000:
             return QUERY_PG_STAT_SLRU_XACT[DEFAULT]
     elif name == QUERY_NAME_PG_STAT_SLRU_OTHER:
-        if version > 130000:
+        if version >= 130000:
             return QUERY_PG_STAT_SLRU_OTHER[DEFAULT]
 
     raise ValueError('unknown query')
