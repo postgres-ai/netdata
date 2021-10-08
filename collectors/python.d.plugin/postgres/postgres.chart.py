@@ -59,6 +59,16 @@ QUERY_NAME_FORCED_AUTOVACUUM = 'FORCED_AUTOVACUUM'
 QUERY_NAME_TX_WRAPAROUND = 'TX_WRAPAROUND'
 QUERY_NAME_DIFF_LSN = 'DIFF_LSN'
 QUERY_NAME_WAL_WRITES = 'WAL_WRITES'
+QUERY_NAME_LONG_RUNNING_TX = 'QUERY_NAME_LONG_RUNNING_TX'
+QUERY_NAME_PG_STAT_SLRU_COMMITTS = 'PG_STAT_SLRU_COMMITTS'
+QUERY_NAME_PG_STAT_SLRU_MULTIXACTMEMBER = 'PG_STAT_SLRU_MULTIXACTMEMBER'
+QUERY_NAME_PG_STAT_SLRU_MULTIXACTOFFSET = 'PG_STAT_SLRU_MULTIXACTOFFSET'
+QUERY_NAME_PG_STAT_SLRU_NOTIFY = 'PG_STAT_SLRU_NOTIFY'
+QUERY_NAME_PG_STAT_SLRU_SERIAL = 'PG_STAT_SLRU_SERIAL'
+QUERY_NAME_PG_STAT_SLRU_SUBTRANS = 'PG_STAT_SLRU_SUBTRANS'
+QUERY_NAME_PG_STAT_SLRU_XACT = 'PG_STAT_SLRU_XACT'
+QUERY_NAME_PG_STAT_SLRU_OTHER = 'PG_STAT_SLRU_OTHER'
+QUERY_NAME_PG_WAIT_EVENT_SUBTRANS = 'PG_WAIT_EVENT_SUBTRANS'
 
 METRICS = {
     QUERY_NAME_DATABASE: [
@@ -158,6 +168,86 @@ METRICS = {
     QUERY_NAME_REPSLOT_FILES: [
         'replslot_wal_keep',
         'replslot_files'
+    ],
+    QUERY_NAME_LONG_RUNNING_TX: [
+	  'client_tx_age_in_seconds',
+	  'autovacuum_tx_age_in_seconds',
+	  'other_tx_age_in_seconds'
+    ],
+    QUERY_NAME_PG_STAT_SLRU_COMMITTS: [
+        'committs_blks_zeroed',
+        'committs_blks_hit',
+        'committs_blks_read',
+        'committs_blks_written',
+        'committs_blks_exists',
+        'committs_flushes',
+        'committs_truncates'
+    ],
+    QUERY_NAME_PG_STAT_SLRU_MULTIXACTMEMBER: [
+        'multixactmember_blks_zeroed',
+        'multixactmember_blks_hit',
+        'multixactmember_blks_read',
+        'multixactmember_blks_written',
+        'multixactmember_blks_exists',
+        'multixactmember_flushes',
+        'multixactmember_truncates'
+    ],
+    QUERY_NAME_PG_STAT_SLRU_MULTIXACTOFFSET: [
+        'multixactoffset_blks_zeroed',
+        'multixactoffset_blks_hit',
+        'multixactoffset_blks_read',
+        'multixactoffset_blks_written',
+        'multixactoffset_blks_exists',
+        'multixactoffset_flushes',
+        'multixactoffset_truncates'
+    ],
+    QUERY_NAME_PG_STAT_SLRU_NOTIFY: [
+        'notify_blks_zeroed',
+        'notify_blks_hit',
+        'notify_blks_read',
+        'notify_blks_written',
+        'notify_blks_exists',
+        'notify_flushes',
+        'notify_truncates'
+    ],
+    QUERY_NAME_PG_STAT_SLRU_SERIAL: [
+        'serial_blks_zeroed',
+        'serial_blks_hit',
+        'serial_blks_read',
+        'serial_blks_written',
+        'serial_blks_exists',
+        'serial_flushes',
+        'serial_truncates'
+    ],
+    QUERY_NAME_PG_STAT_SLRU_SUBTRANS: [
+        'subtrans_blks_zeroed',
+        'subtrans_blks_hit',
+        'subtrans_blks_read',
+        'subtrans_blks_written',
+        'subtrans_blks_exists',
+        'subtrans_flushes',
+        'subtrans_truncates'
+    ],
+    QUERY_NAME_PG_STAT_SLRU_XACT: [
+        'xact_blks_zeroed',
+        'xact_blks_hit',
+        'xact_blks_read',
+        'xact_blks_written',
+        'xact_blks_exists',
+        'xact_flushes',
+        'xact_truncates'
+    ],
+    QUERY_NAME_PG_STAT_SLRU_OTHER: [
+        'other_blks_zeroed',
+        'other_blks_hit',
+        'other_blks_read',
+        'other_blks_written',
+        'other_blks_exists',
+        'other_flushes',
+        'other_truncates'
+    ],
+    QUERY_NAME_PG_WAIT_EVENT_SUBTRANS: [
+        'subtrans'
     ]
 }
 
@@ -744,6 +834,173 @@ SELECT
 """,
 }
 
+QUERY_LONG_RUNNING_TX = {
+    DEFAULT: """
+SELECT
+	MAX(EXTRACT(EPOCH FROM (clock_timestamp() - xact_start)))
+	  FILTER (WHERE backend_type = 'client backend') as client_tx_age_in_seconds,
+	MAX(EXTRACT(EPOCH FROM (clock_timestamp() - xact_start)))
+	  FILTER (WHERE backend_type ~ 'autovacuum') as autovacuum_tx_age_in_seconds,
+	MAX(EXTRACT(EPOCH FROM (clock_timestamp() - xact_start)))
+	  FILTER (WHERE backend_type !~ 'autovacuum'
+	    AND backend_type <> 'client backend') as other_tx_age_in_seconds
+FROM
+	pg_stat_activity
+WHERE
+	state is distinct from 'idle'
+	AND backend_xmin IS NOT NULL;
+""",
+}
+
+QUERY_PG_STAT_SLRU_COMMITTS = {
+    DEFAULT: """
+SELECT
+	blks_zeroed as committs_blks_zeroed,
+ 	blks_hit as committs_blks_hit,
+ 	blks_read as committs_blks_read,
+	blks_written as committs_blks_written,
+	blks_exists as committs_blks_exists,
+	flushes as committs_flushes,
+	truncates as committs_truncates
+FROM
+	pg_stat_slru
+WHERE
+	name = 'CommitTs';
+""",
+}
+
+QUERY_PG_STAT_SLRU_MULTIXACTMEMBER = {
+    DEFAULT: """
+SELECT
+	blks_zeroed as multixactmember_blks_zeroed,
+ 	blks_hit as multixactmember_blks_hit,
+ 	blks_read as multixactmember_blks_read,
+	blks_written as multixactmember_blks_written,
+	blks_exists as multixactmember_blks_exists,
+	flushes as multixactmember_flushes,
+	truncates as multixactmember_truncates
+FROM
+	pg_stat_slru
+WHERE
+	name = 'MultiXactMember';
+""",
+}
+
+QUERY_PG_STAT_SLRU_MULTIXACTOFFSET = {
+    DEFAULT: """
+SELECT
+	blks_zeroed as multixactoffset_blks_zeroed,
+ 	blks_hit as multixactoffset_blks_hit,
+ 	blks_read as multixactoffset_blks_read,
+	blks_written as multixactoffset_blks_written,
+	blks_exists as multixactoffset_blks_exists,
+	flushes as multixactoffset_flushes,
+	truncates as multixactoffset_truncates
+FROM
+	pg_stat_slru
+WHERE
+	name = 'MultiXactOffset';
+""",
+}
+
+QUERY_PG_STAT_SLRU_NOTIFY = {
+    DEFAULT: """
+SELECT
+	blks_zeroed as notify_blks_zeroed,
+ 	blks_hit as notify_blks_hit,
+ 	blks_read as notify_blks_read,
+	blks_written as notify_blks_written,
+	blks_exists as notify_blks_exists,
+	flushes as notify_flushes,
+	truncates as notify_truncates
+FROM
+	pg_stat_slru
+WHERE
+	name = 'Notify';
+""",
+}
+
+QUERY_PG_STAT_SLRU_SERIAL = {
+    DEFAULT: """
+SELECT
+	blks_zeroed as serial_blks_zeroed,
+ 	blks_hit as serial_blks_hit,
+ 	blks_read as serial_blks_read,
+	blks_written as serial_blks_written,
+	blks_exists as serial_blks_exists,
+	flushes as serial_flushes,
+	truncates as serial_truncates
+FROM
+	pg_stat_slru
+WHERE
+	name = 'Serial';
+""",
+}
+
+QUERY_PG_STAT_SLRU_SUBTRANS = {
+    DEFAULT: """
+SELECT
+	blks_zeroed as subtrans_blks_zeroed,
+ 	blks_hit as subtrans_blks_hit,
+ 	blks_read as subtrans_blks_read,
+	blks_written as subtrans_blks_written,
+	blks_exists as subtrans_blks_exists,
+	flushes as subtrans_flushes,
+	truncates as subtrans_truncates
+FROM
+	pg_stat_slru
+WHERE
+	name = 'Subtrans';
+""",
+}
+
+QUERY_PG_STAT_SLRU_XACT = {
+    DEFAULT: """
+SELECT
+	blks_zeroed as xact_blks_zeroed,
+ 	blks_hit as xact_blks_hit,
+ 	blks_read as xact_blks_read,
+	blks_written as xact_blks_written,
+	blks_exists as xact_blks_exists,
+	flushes as xact_flushes,
+	truncates as xact_truncates
+FROM
+	pg_stat_slru
+WHERE
+	name = 'Xact';
+""",
+}
+
+QUERY_PG_STAT_SLRU_OTHER = {
+    DEFAULT: """
+SELECT
+	blks_zeroed as other_blks_zeroed,
+ 	blks_hit as other_blks_hit,
+ 	blks_read as other_blks_read,
+	blks_written as other_blks_written,
+	blks_exists as other_blks_exists,
+	flushes as other_flushes,
+	truncates as other_truncates
+FROM
+	pg_stat_slru
+WHERE
+	name = 'other';
+""",
+}
+
+QUERY_PG_WAIT_EVENT_SUBTRANS = {
+    DEFAULT: """
+SELECT
+  count(wait_event) as subtrans
+FROM
+  pg_stat_activity
+WHERE
+  wait_event = 'SubtransControlLock' OR
+  wait_event = 'SubtransSLRU';
+""",
+}
+
+
 def query_factory(name, version=NO_VERSION):
     if name == QUERY_NAME_BACKENDS:
         return QUERY_BACKEND[DEFAULT]
@@ -811,6 +1068,34 @@ def query_factory(name, version=NO_VERSION):
         if version < 100000:
             return QUERY_DIFF_LSN[V96]
         return QUERY_DIFF_LSN[DEFAULT]
+    elif name == QUERY_NAME_LONG_RUNNING_TX:
+        return QUERY_LONG_RUNNING_TX[DEFAULT]
+    elif name == QUERY_NAME_PG_STAT_SLRU_COMMITTS:
+        if version >= 130000:
+            return QUERY_PG_STAT_SLRU_COMMITTS[DEFAULT]
+    elif name == QUERY_NAME_PG_STAT_SLRU_MULTIXACTMEMBER:
+        if version >= 130000:
+            return QUERY_PG_STAT_SLRU_MULTIXACTMEMBER[DEFAULT]
+    elif name == QUERY_NAME_PG_STAT_SLRU_MULTIXACTOFFSET:
+        if version >= 130000:
+            return QUERY_PG_STAT_SLRU_MULTIXACTOFFSET[DEFAULT]
+    elif name == QUERY_NAME_PG_STAT_SLRU_NOTIFY:
+        if version >= 130000:
+            return QUERY_PG_STAT_SLRU_NOTIFY[DEFAULT]
+    elif name == QUERY_NAME_PG_STAT_SLRU_SERIAL:
+        if version >= 130000:
+            return QUERY_PG_STAT_SLRU_SERIAL[DEFAULT]
+    elif name == QUERY_NAME_PG_STAT_SLRU_SUBTRANS:
+        if version >= 130000:
+            return QUERY_PG_STAT_SLRU_SUBTRANS[DEFAULT]
+    elif name == QUERY_NAME_PG_STAT_SLRU_XACT:
+        if version >= 130000:
+            return QUERY_PG_STAT_SLRU_XACT[DEFAULT]
+    elif name == QUERY_NAME_PG_STAT_SLRU_OTHER:
+        if version >= 130000:
+            return QUERY_PG_STAT_SLRU_OTHER[DEFAULT]
+    elif name == QUERY_NAME_PG_WAIT_EVENT_SUBTRANS:
+        return QUERY_PG_WAIT_EVENT_SUBTRANS[DEFAULT]
 
     raise ValueError('unknown query')
 
@@ -847,7 +1132,17 @@ ORDER = [
     'autovacuum',
     'forced_autovacuum',
     'tx_wraparound_oldest_current_xid',
-    'tx_wraparound_percent_towards_wraparound'
+    'tx_wraparound_percent_towards_wraparound',
+    'long_running_tx',
+    'pg_stat_slru_committs',
+    'pg_stat_slru_multixactmember',
+    'pg_stat_slru_multixactoffset',
+    'pg_stat_slru_notify',
+    'pg_stat_slru_serial',
+    'pg_stat_slru_subtrans',
+    'pg_stat_slru_xact',
+    'pg_stat_slru_other',
+    'wait_event_subtrans'
 ]
 
 CHARTS = {
@@ -1075,6 +1370,116 @@ CHARTS = {
             ['replslot_wal_keep', 'wal keeped', 'absolute'],
             ['replslot_files', 'pg_replslot files', 'absolute']
         ]
+    },
+    'long_running_tx': {
+        'options': [None, 'Max transaction age', 'seconds', 'oldest transactions', 'postgres.db_stat_tx_age', 'line'],
+        'lines': [
+            ['client_tx_age_in_seconds', 'client tx age (s)', 'absolute'],
+            ['autovacuum_tx_age_in_seconds', 'autovacuum tx age (s)', 'absolute'],
+            ['other_tx_age_in_seconds', 'other tx age (s)', 'absolute']
+        ]
+    },
+    'pg_stat_slru_committs': {
+        'options': [None, 'pg_stat_slru "CommitTs"', 'count', 'pg_stat_slru', 'postgres.pg_stat_slru_committs', 'line'],
+        'lines': [
+            ['committs_blks_zeroed', 'blks zeroed', 'incremental'],
+            ['committs_blks_hit', 'blks hit', 'incremental'],
+            ['committs_blks_read', 'blks read', 'incremental'],
+            ['committs_blks_written', 'blks written', 'incremental'],
+            ['committs_blks_exists', 'blks exists', 'incremental'],
+            ['committs_flushes', 'flushes', 'incremental'],
+            ['committs_truncates', 'truncates', 'incremental']
+        ]
+    },
+    'pg_stat_slru_multixactmember': {
+        'options': [None, 'pg_stat_slru "MultiXactMember"', 'count', 'pg_stat_slru', 'postgres.pg_stat_slru_multixactmember', 'line'],
+        'lines': [
+            ['multixactmember_blks_zeroed', 'blks zeroed', 'incremental'],
+            ['multixactmember_blks_hit', 'blks hit', 'incremental'],
+            ['multixactmember_blks_read', 'blks read', 'incremental'],
+            ['multixactmember_blks_written', 'blks written', 'incremental'],
+            ['multixactmember_blks_exists', 'blks exists', 'incremental'],
+            ['multixactmember_flushes', 'flushes', 'incremental'],
+            ['multixactmember_truncates', 'truncates', 'incremental']
+        ]
+    },
+    'pg_stat_slru_multixactoffset': {
+        'options': [None, 'pg_stat_slru "MultiXactOffset"', 'count', 'pg_stat_slru', 'postgres.pg_stat_slru_multixactoffset', 'line'],
+        'lines': [
+            ['multixactoffset_blks_zeroed', 'blks zeroed', 'incremental'],
+            ['multixactoffset_blks_hit', 'blks hit', 'incremental'],
+            ['multixactoffset_blks_read', 'blks read', 'incremental'],
+            ['multixactoffset_blks_written', 'blks written', 'incremental'],
+            ['multixactoffset_blks_exists', 'blks exists', 'incremental'],
+            ['multixactoffset_flushes', 'flushes', 'incremental'],
+            ['multixactoffset_truncates', 'truncates', 'incremental']
+        ]
+    },
+    'pg_stat_slru_notify': {
+        'options': [None, 'pg_stat_slru "Notify"', 'count', 'pg_stat_slru', 'postgres.pg_stat_slru_notify', 'line'],
+        'lines': [
+            ['notify_blks_zeroed', 'blks zeroed', 'incremental'],
+            ['notify_blks_hit', 'blks hit', 'incremental'],
+            ['notify_blks_read', 'blks read', 'incremental'],
+            ['notify_blks_written', 'blks written', 'incremental'],
+            ['notify_blks_exists', 'blks exists', 'incremental'],
+            ['notify_flushes', 'flushes', 'incremental'],
+            ['notify_truncates', 'truncates', 'incremental']
+        ]
+    },
+    'pg_stat_slru_serial': {
+        'options': [None, 'pg_stat_slru "Serial"', 'count', 'pg_stat_slru', 'postgres.pg_stat_slru_serial', 'line'],
+        'lines': [
+            ['serial_blks_zeroed', 'blks zeroed', 'incremental'],
+            ['serial_blks_hit', 'blks hit', 'incremental'],
+            ['serial_blks_read', 'blks read', 'incremental'],
+            ['serial_blks_written', 'blks written', 'incremental'],
+            ['serial_blks_exists', 'blks exists', 'incremental'],
+            ['serial_flushes', 'flushes', 'incremental'],
+            ['serial_truncates', 'truncates', 'incremental']
+        ]
+    },
+    'pg_stat_slru_subtrans': {
+        'options': [None, 'pg_stat_slru "Subtrans"', 'count', 'pg_stat_slru', 'postgres.pg_stat_slru_subtrans', 'line'],
+        'lines': [
+            ['subtrans_blks_zeroed', 'blks zeroed', 'incremental'],
+            ['subtrans_blks_hit', 'blks hit', 'incremental'],
+            ['subtrans_blks_read', 'blks read', 'incremental'],
+            ['subtrans_blks_written', 'blks written', 'incremental'],
+            ['subtrans_blks_exists', 'blks exists', 'incremental'],
+            ['subtrans_flushes', 'flushes', 'incremental'],
+            ['subtrans_truncates', 'truncates', 'incremental']
+        ]
+    },
+    'pg_stat_slru_xact': {
+        'options': [None, 'pg_stat_slru "Xact"', 'count', 'pg_stat_slru', 'postgres.pg_stat_slru_xact', 'line'],
+        'lines': [
+            ['xact_blks_zeroed', 'blks zeroed', 'incremental'],
+            ['xact_blks_hit', 'blks hit', 'incremental'],
+            ['xact_blks_read', 'blks read', 'incremental'],
+            ['xact_blks_written', 'blks written', 'incremental'],
+            ['xact_blks_exists', 'blks exists', 'incremental'],
+            ['xact_flushes', 'flushes', 'incremental'],
+            ['xact_truncates', 'truncates', 'incremental']
+        ]
+    },
+    'pg_stat_slru_other': {
+        'options': [None, 'pg_stat_slru "other"', 'count', 'pg_stat_slru', 'postgres.pg_stat_slru_other', 'line'],
+        'lines': [
+            ['other_blks_zeroed', 'blks zeroed', 'incremental'],
+            ['other_blks_hit', 'blks hit', 'incremental'],
+            ['other_blks_read', 'blks read', 'incremental'],
+            ['other_blks_written', 'blks written', 'incremental'],
+            ['other_blks_exists', 'blks exists', 'incremental'],
+            ['other_flushes', 'flushes', 'incremental'],
+            ['other_truncates', 'truncates', 'incremental']
+        ]
+    },
+    'wait_event_subtrans': {
+        'options': [None, 'wait_event "SubtransControlLock" or "SubtransSLRU"', 'count', 'wait_event_subtrans', 'postgres.wait_event_subtrans', 'line'],
+        'lines': [
+            ['subtrans', 'Subtrans', 'absolute']
+        ]
     }
 }
 
@@ -1259,6 +1664,17 @@ class Service(SimpleService):
         self.queries[query_factory(QUERY_NAME_DIFF_LSN, self.server_version)] = METRICS[QUERY_NAME_WAL_WRITES]
         self.queries[query_factory(QUERY_NAME_STANDBY_DELTA, self.server_version)] = METRICS[QUERY_NAME_STANDBY_DELTA]
         self.queries[query_factory(QUERY_NAME_BLOCKERS, self.server_version)] = METRICS[QUERY_NAME_BLOCKERS]
+        self.queries[query_factory(QUERY_NAME_LONG_RUNNING_TX, self.server_version)] = METRICS[QUERY_NAME_LONG_RUNNING_TX]
+        self.queries[query_factory(QUERY_NAME_PG_WAIT_EVENT_SUBTRANS)] = METRICS[QUERY_NAME_PG_WAIT_EVENT_SUBTRANS]
+        if self.server_version >= 130000:
+            self.queries[query_factory(QUERY_NAME_PG_STAT_SLRU_COMMITTS, self.server_version)] = METRICS[QUERY_NAME_PG_STAT_SLRU_COMMITTS]
+            self.queries[query_factory(QUERY_NAME_PG_STAT_SLRU_MULTIXACTMEMBER, self.server_version)] = METRICS[QUERY_NAME_PG_STAT_SLRU_MULTIXACTMEMBER]
+            self.queries[query_factory(QUERY_NAME_PG_STAT_SLRU_MULTIXACTOFFSET, self.server_version)] = METRICS[QUERY_NAME_PG_STAT_SLRU_MULTIXACTOFFSET]
+            self.queries[query_factory(QUERY_NAME_PG_STAT_SLRU_NOTIFY, self.server_version)] = METRICS[QUERY_NAME_PG_STAT_SLRU_NOTIFY]
+            self.queries[query_factory(QUERY_NAME_PG_STAT_SLRU_SERIAL, self.server_version)] = METRICS[QUERY_NAME_PG_STAT_SLRU_SERIAL]
+            self.queries[query_factory(QUERY_NAME_PG_STAT_SLRU_SUBTRANS, self.server_version)] = METRICS[QUERY_NAME_PG_STAT_SLRU_SUBTRANS]
+            self.queries[query_factory(QUERY_NAME_PG_STAT_SLRU_XACT, self.server_version)] = METRICS[QUERY_NAME_PG_STAT_SLRU_XACT]
+            self.queries[query_factory(QUERY_NAME_PG_STAT_SLRU_OTHER, self.server_version)] = METRICS[QUERY_NAME_PG_STAT_SLRU_OTHER]
 
         if self.do_index_stats:
             self.queries[query_factory(QUERY_NAME_INDEX_STATS)] = METRICS[QUERY_NAME_INDEX_STATS]
