@@ -68,6 +68,7 @@ QUERY_NAME_PG_STAT_SLRU_SERIAL = 'PG_STAT_SLRU_SERIAL'
 QUERY_NAME_PG_STAT_SLRU_SUBTRANS = 'PG_STAT_SLRU_SUBTRANS'
 QUERY_NAME_PG_STAT_SLRU_XACT = 'PG_STAT_SLRU_XACT'
 QUERY_NAME_PG_STAT_SLRU_OTHER = 'PG_STAT_SLRU_OTHER'
+QUERY_NAME_PG_WAIT_EVENT_SUBTRANS = 'PG_WAIT_EVENT_SUBTRANS'
 
 METRICS = {
     QUERY_NAME_DATABASE: [
@@ -244,6 +245,9 @@ METRICS = {
         'other_blks_exists',
         'other_flushes',
         'other_truncates'
+    ],
+    QUERY_NAME_PG_WAIT_EVENT_SUBTRANS: [
+        'subtrans'
     ]
 }
 
@@ -984,6 +988,18 @@ WHERE
 """,
 }
 
+QUERY_PG_WAIT_EVENT_SUBTRANS = {
+    DEFAULT: """
+SELECT
+  count(wait_event) as subtrans
+FROM
+  pg_stat_activity
+WHERE
+  wait_event = 'SubtransControlLock' OR
+  wait_event = 'SubtransSLRU';
+""",
+}
+
 
 def query_factory(name, version=NO_VERSION):
     if name == QUERY_NAME_BACKENDS:
@@ -1078,6 +1094,8 @@ def query_factory(name, version=NO_VERSION):
     elif name == QUERY_NAME_PG_STAT_SLRU_OTHER:
         if version >= 130000:
             return QUERY_PG_STAT_SLRU_OTHER[DEFAULT]
+    elif name == QUERY_NAME_PG_WAIT_EVENT_SUBTRANS:
+        return QUERY_PG_WAIT_EVENT_SUBTRANS[DEFAULT]
 
     raise ValueError('unknown query')
 
@@ -1123,7 +1141,8 @@ ORDER = [
     'pg_stat_slru_serial',
     'pg_stat_slru_subtrans',
     'pg_stat_slru_xact',
-    'pg_stat_slru_other'
+    'pg_stat_slru_other',
+    'wait_event_subtrans'
 ]
 
 CHARTS = {
@@ -1455,6 +1474,12 @@ CHARTS = {
             ['other_flushes', 'flushes', 'incremental'],
             ['other_truncates', 'truncates', 'incremental']
         ]
+    },
+    'wait_event_subtrans': {
+        'options': [None, 'wait_event "SubtransControlLock" or "SubtransSLRU"', 'count', 'wait_event_subtrans', 'postgres.wait_event_subtrans', 'line'],
+        'lines': [
+            ['subtrans', 'Subtrans', 'absolute']
+        ]
     }
 }
 
@@ -1640,6 +1665,7 @@ class Service(SimpleService):
         self.queries[query_factory(QUERY_NAME_STANDBY_DELTA, self.server_version)] = METRICS[QUERY_NAME_STANDBY_DELTA]
         self.queries[query_factory(QUERY_NAME_BLOCKERS, self.server_version)] = METRICS[QUERY_NAME_BLOCKERS]
         self.queries[query_factory(QUERY_NAME_LONG_RUNNING_TX, self.server_version)] = METRICS[QUERY_NAME_LONG_RUNNING_TX]
+        self.queries[query_factory(QUERY_NAME_PG_WAIT_EVENT_SUBTRANS)] = METRICS[QUERY_NAME_PG_WAIT_EVENT_SUBTRANS]
         if self.server_version >= 130000:
             self.queries[query_factory(QUERY_NAME_PG_STAT_SLRU_COMMITTS, self.server_version)] = METRICS[QUERY_NAME_PG_STAT_SLRU_COMMITTS]
             self.queries[query_factory(QUERY_NAME_PG_STAT_SLRU_MULTIXACTMEMBER, self.server_version)] = METRICS[QUERY_NAME_PG_STAT_SLRU_MULTIXACTMEMBER]
